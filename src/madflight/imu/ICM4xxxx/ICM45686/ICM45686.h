@@ -25,10 +25,10 @@
 #define ICM45686
 
 extern "C" {
-#include "imu/inv_imu_driver_advanced.h"
-#include "imu/inv_imu_edmp.h"
+#include "./imu/inv_imu_driver_advanced.h"
+#include "./imu/inv_imu_edmp.h"
 #if defined(ICM45686S) || defined(ICM45605S)
-#include "imu/inv_imu_edmp_gaf.h"
+#include "./imu/inv_imu_edmp_gaf.h"
 #endif
 }
 

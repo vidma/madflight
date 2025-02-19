@@ -15,15 +15,15 @@
  *
  */
 
-#include "imu/inv_imu_edmp.h"
-#include "imu/inv_imu_edmp_compass.h"
-#include "imu/inv_imu_edmp_defs.h"
+#include "./inv_imu_edmp.h"
+#include "./inv_imu_edmp_compass.h"
+#include "./inv_imu_edmp_defs.h"
 
 int inv_imu_edmp_compass_init(inv_imu_device_t *s)
 {
 	int            status    = INV_IMU_OK;
 	static uint8_t ram_img[] = {
-#include "imu/edmp_ram_extended_features_image.h"
+#include "./edmp_ram_extended_features_image.h"
 	};
 
 	status |= inv_imu_edmp_init_apex(s);

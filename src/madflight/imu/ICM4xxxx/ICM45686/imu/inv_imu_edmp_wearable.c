@@ -15,9 +15,9 @@
  *
  */
 
-#include "imu/inv_imu_edmp.h"
-#include "imu/inv_imu_edmp_wearable.h"
-#include "imu/inv_imu_edmp_defs.h"
+#include "./inv_imu_edmp.h"
+#include "./inv_imu_edmp_wearable.h"
+#include "./inv_imu_edmp_defs.h"
 
 /* B2S specific memory map */
 #define EDMP_B2S_MOUNTING_MATRIX      0x8FE
@@ -27,7 +27,7 @@ int inv_imu_edmp_b2s_init(inv_imu_device_t *s)
 {
 	int            status    = INV_IMU_OK;
 	static uint8_t ram_img[] = {
-#include "imu/edmp_ram_extended_features_image.h"
+#include "./edmp_ram_extended_features_image.h"
 	};
 
 	status |= inv_imu_edmp_init_apex(s);

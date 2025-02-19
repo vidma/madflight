@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#include "imu/inv_imu_driver.h"
+#include "./inv_imu_driver.h"
 
 /** @brief Description of one I2C master operation */
 struct inv_imu_i2cm_optype {

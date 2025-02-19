@@ -15,7 +15,7 @@
  *
  */
 
-#include "imu/inv_imu_i2cm.h"
+#include "./inv_imu_i2cm.h"
 
 int inv_imu_init_i2cm(inv_imu_device_t *s)
 {
