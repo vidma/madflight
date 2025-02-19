@@ -4,7 +4,6 @@
 #include "../imu_interface.h"
 
 // prevent naming conflicts, e.g. static spi
-
 namespace motionarduino {
     #include "./ICM45686/ICM45686.h"
     // Force linking
