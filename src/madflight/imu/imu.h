@@ -16,6 +16,14 @@ These are 6 or 9 axis sensors, with maximum sample rates: gyro 8 kHz, accel 4 kH
 configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pass filter), and mag 100 Hz.
 ========================================================================================================================*/
 
+//#define IMU_INTERRUPT_DEBUG
+
+#ifdef IMU_USE_TIMER_INSTEAD_OF_INTERRUPT
+  #include <Arduino.h>
+  #include "hardware/timer.h"
+#endif
+
+
 //Available sensors
 #define IMU_USE_NONE 0
 #define IMU_USE_SPI_BMI270 1
@@ -215,13 +223,6 @@ int Imu::setup(uint32_t sampleRate) {
   return rv;
 }
 
-//wait for new sample, returns false on fail
-bool Imu::waitNewSample() {
-  uint32_t last_cnt = update_cnt;
-  uint32_t start = millis();
-  while( last_cnt == update_cnt && millis() - start <= (10*1000) / _sampleRate );
-  return (last_cnt != update_cnt);
-}
 
 void Imu::statReset() {
     stat_cnt = 0; //number of accumulated samples
@@ -235,6 +236,11 @@ void Imu::statReset() {
 
 //this function executes whenever the imu task is triggered
 void Imu::_interrupt_handler() {
+  #ifdef IMU_INTERRUPT_DEBUG
+    int current_core = hw_get_core_num();
+    Serial.printf("IMU: _interrupt_handler imu_core=%d starting\n", current_core);
+  #endif
+
   //local copy of timestamp (_imu_ll_interrupt_ts might change during execution of this function)
   uint32_t interrupt_ts = _imu_ll_interrupt_ts;
   
@@ -249,6 +255,9 @@ void Imu::_interrupt_handler() {
     imu_Sensor.getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
   #else
     imu_Sensor.getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
+  #endif
+  #ifdef IMU_INTERRUPT_DEBUG
+    Serial.printf("IMU: _interrupt_handler imu_core=%d getMotion9NED done\n", current_core);
   #endif
   IMU_ROTATE();
   dt = (interrupt_ts - ts) / 1000000.0;
@@ -273,6 +282,11 @@ void Imu::_interrupt_handler() {
 // watchdog resets. The delay (latency) from rising edge INT pin to handler is approx. 10 us on ESP32 and 50 us on RP2040.
 
 void _imu_ll_interrupt_handler();
+
+bool on_timer(struct repeating_timer *t) {
+    _imu_ll_interrupt_handler();
+    return true; // Keep repeating
+}
 
 //-------------------------------------------------------------------------------------------------------------------------
 #if IMU_EXEC == IMU_EXEC_FREERTOS || IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
@@ -311,8 +325,17 @@ void _imu_ll_interrupt_handler();
 //-------------------------------------------------------------------------------------------------------------------------
 #elif IMU_EXEC == IMU_EXEC_IRQ
   void _imu_ll_interrupt_setup() {
-    Serial.println("IMU: IMU_EXEC_IRQ");
-    attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), _imu_ll_interrupt_handler, RISING);
+    #ifdef IMU_USE_TIMER_INSTEAD_OF_INTERRUPT
+      Serial.println("IMU: IMU_EXEC_TIMER");
+      // Create a repeating timer that calls the interrupt handler every 500 microseconds
+      static struct repeating_timer timer;
+      add_repeating_timer_us(-500, on_timer, NULL, &timer);
+      
+    #else
+        Serial.println("IMU: IMU_EXEC_IRQ");
+        attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), _imu_ll_interrupt_handler, RISING);
+    #endif
+
   }
 
   inline void _imu_ll_interrupt_handler2() {
@@ -338,5 +361,18 @@ void _imu_ll_interrupt_handler() {
     }
   }
 }
+
+//wait for new sample, returns false on fail
+bool Imu::waitNewSample() {
+  uint32_t last_cnt = update_cnt;
+  uint32_t start = millis();
+  while( last_cnt == update_cnt && millis() - start <= (10*1000) / _sampleRate ){
+      // FIXME: add config - force read IMU without waiting for interrupt. GY-91 do not have interrupt PIN
+    //_imu_ll_interrupt_handler();
+    //sleep_us(100);
+  }
+  return (last_cnt != update_cnt);
+}
+
 
 #endif //#if IMU_USE == IMU_USE_NONE
