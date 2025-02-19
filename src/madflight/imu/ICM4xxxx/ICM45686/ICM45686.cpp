@@ -134,7 +134,7 @@ int ICM456xx::begin() {
   ((inv_imu_adv_var_t *)&icm_driver.adv_var)->sensor_event_cb = sensor_event_cb;
   icm_driver_ptr = &icm_driver;
 
-  sleep_us(3000);
+  sleep_us((uint32_t)3000);
  
   return inv_imu_adv_init(&icm_driver);
 }
